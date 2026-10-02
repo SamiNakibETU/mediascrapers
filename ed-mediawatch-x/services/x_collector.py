@@ -1,0 +1,373 @@
+"""X/Twitter collector via Nitter RSS.
+
+For each active personality with a handle, fetch their Nitter RSS timeline,
+parse tweets with feedparser, dedupe by tweet id, and persist new Posts.
+Mirrors the proven RSS-collector pattern from breve_de_presse_PMO
+(rate-limited, concurrent, idempotent), pointed at Nitter instead of newspapers.
+"""
+
+from __future__ import annotations
+
+import asyncio
+import re
+from datetime import datetime, timezone
+
+import feedparser
+import structlog
+from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
+
+from src.config import get_settings
+from src.database import get_session_factory
+from src.models.collection_run import CollectionRun
+from src.models.personality import Personality
+from src.models.post import Post
+from src.services.collection.nitter_client import NitterClient
+from src.services.collection.x_html_parser import parse_profile_html
+from src.services.collection.x_syndication import SyndicationClient
+from src.services.collection.x_enrich import enrich_truncated_posts
+from src.services.collection.x_backfill import run_backfill as run_archive_backfill
+from src.utils import clean_html, feed_datetime, sha256, tweet_guid
+from src.vocabulary import RunKind, RunStatus, Source
+
+logger = structlog.get_logger(__name__)
+
+_IMG_RE = re.compile(r'<img[^>]+src="([^"]+)"', re.IGNORECASE)
+# Titre Nitter d'une réponse : « R to @username: … » → capte le handle visé.
+_RTO_RE = re.compile(r"^R to @?([A-Za-z0-9_]+)")
+
+
+def _extract_media(entry) -> str | None:
+    summary = entry.get("summary", "") if hasattr(entry, "get") else ""
+    m = _IMG_RE.search(summary or "")
+    return m.group(1) if m else None
+
+
+def parse_feed(xml: str, handle: str) -> list[dict]:
+    """Parse a Nitter RSS document into normalized post dicts."""
+    feed = feedparser.parse(xml)
+    out: list[dict] = []
+    for entry in feed.entries:
+        link = getattr(entry, "link", "") or ""
+        title = getattr(entry, "title", "") or ""
+        creator = (getattr(entry, "author", "") or "").lstrip("@")
+
+        is_retweet = title.startswith("RT by ") or (
+            bool(creator) and creator.lower() != handle.lower()
+        )
+        is_reply = title.startswith("R to ")
+        # Typologie best-effort en RSS (le quote n'est pas distinguable ici → HTML).
+        post_type = "retweet" if is_retweet else ("reply" if is_reply else "original")
+        reply_to = None
+        if is_reply:
+            m = _RTO_RE.match(title)
+            reply_to = m.group(1) if m else None
+
+        content = clean_html(title)
+        if not content:
+            continue
+        out.append(
+            {
+                "guid": tweet_guid(handle, link),
+                "url": link,
+                "content": content,
+                "published_at": feed_datetime(entry),
+                "is_retweet": is_retweet,
+                "is_reply": is_reply,
+                "post_type": post_type,
+                "reply_to_handle": reply_to,
+                "media_url": _extract_media(entry),
+                "collected_via": "rss",
+                "word_count": len(content.split()),
+            }
+        )
+    return out
+
+
+def _post_conflict_insert(rows: list[dict]):
+    """INSERT … ON CONFLICT(guid) DO NOTHING — dialecte SQLite ou PostgreSQL.
+
+    Évite qu'un guid en double (collecte concurrente : startup vs scheduler, ou
+    réplay) ne fasse échouer le commit et perdre TOUT le lot. Idempotent par
+    nature. `insert().values(rows)` produit un seul INSERT multi-VALUES → un
+    rowcount fiable (= lignes réellement insérées, conflits exclus)."""
+    if get_settings().database_url.startswith("postgres"):
+        from sqlalchemy.dialects.postgresql import insert as _insert
+    else:
+        from sqlalchemy.dialects.sqlite import insert as _insert
+    return _insert(Post).values(rows).on_conflict_do_nothing(index_elements=["guid"])
+
+
+async def _insert_new(db: AsyncSession, personality_id: int, posts: list[dict]) -> int:
+    """Insert new posts, deduped by guid via ON CONFLICT. RSS or HTML dicts."""
+    if not posts:
+        return 0
+    now = datetime.now(timezone.utc)
+    rows: list[dict] = []
+    for pd in posts:
+        data = dict(pd)
+        data["personality_id"] = personality_id
+        data["source"] = Source.X
+        # engagement present (HTML path) → timestamp it
+        if data.get("likes") is not None or data.get("retweets") is not None:
+            data["engagement_captured_at"] = now
+        # Métadonnées de collecte (C0) : voie (rss|html), langue, hash de contenu.
+        data.setdefault("collected_via", "rss")
+        data.setdefault("lang", "fr")
+        data["content_hash"] = sha256((data.get("content") or "").lower())
+        rows.append(data)
+    result = await db.execute(_post_conflict_insert(rows))
+    await db.commit()
+    return result.rowcount or 0
+
+
+async def _collect_one(
+    client: NitterClient, db: AsyncSession, p: Personality
+) -> tuple[int, str | None]:
+    """Live RSS collection (no engagement; works on public nitter.net)."""
+    if not p.handle:
+        return 0, None
+    xml, instance = await client.fetch_rss(p.handle)
+    if not xml:
+        return 0, instance
+    posts = parse_feed(xml, p.handle)
+    new_count = await _insert_new(db, p.id, posts)
+    logger.info("collect.personality", handle=p.handle, new=new_count, instance=instance)
+    return new_count, instance
+
+
+async def collect_one_html(
+    client: NitterClient,
+    db: AsyncSession,
+    p: Personality,
+    *,
+    max_pages: int = 1,
+    since: datetime | None = None,
+) -> tuple[int, str | None]:
+    """HTML collection WITH engagement, paginated by cursor (backfill-capable).
+
+    Walks profile pages following the `?cursor=` link until `max_pages`, or until
+    posts predate `since` (backfill cutoff), or no further cursor. Requires an
+    instance that serves the timeline (self-hosted Nitter in practice).
+    """
+    if not p.handle:
+        return 0, None
+    path = f"/{p.handle}"
+    last_instance: str | None = None
+    total_new = 0
+
+    for _ in range(max_pages):
+        html, instance = await client.fetch_html(path)
+        if not html:
+            break
+        last_instance = instance
+        posts, cursor = parse_profile_html(html, p.handle, base_url=instance)
+        if not posts:
+            break
+
+        if since is not None:
+            kept = [pd for pd in posts if not pd["published_at"] or pd["published_at"] >= since]
+            reached_cutoff = len(kept) < len(posts)
+            posts = kept
+        else:
+            reached_cutoff = False
+
+        total_new += await _insert_new(db, p.id, posts)
+
+        if reached_cutoff or not cursor:
+            break
+        path = f"/{p.handle}{cursor if cursor.startswith('?') else '?' + cursor}"
+
+    logger.info("collect.html", handle=p.handle, new=total_new, instance=last_instance)
+    return total_new, last_instance
+
+
+async def run_backfill(since: datetime, max_pages_per_handle: int = 40) -> dict:
+    """Backfill every active handle back to `since` via HTML pagination.
+
+    Resumable: dedup by guid means re-runs only fetch what's missing.
+    """
+    factory = get_session_factory()
+    client = NitterClient()
+    async with factory() as db:
+        personalities = list(
+            (
+                await db.execute(
+                    select(Personality).where(
+                        Personality.is_active.is_(True),
+                        Personality.handle.isnot(None),
+                    )
+                )
+            ).scalars().all()
+        )
+
+    logger.info("backfill.start", handles=len(personalities),
+                since=since.isoformat(), max_pages=max_pages_per_handle)
+    total_new = blocked = 0
+    for p in personalities:
+        async with factory() as db:
+            try:
+                new, inst = await collect_one_html(
+                    client, db, p, max_pages=max_pages_per_handle, since=since
+                )
+                total_new += new
+                if inst is None:
+                    blocked += 1
+            except Exception as exc:  # noqa: BLE001
+                logger.warning("backfill.error", handle=p.handle, error=str(exc)[:160])
+    stats = {"handles": len(personalities), "posts_new": total_new, "blocked": blocked,
+             "since": since.isoformat()}
+    logger.info("backfill.complete", **stats)
+    return stats
+
+
+async def _record_handle_health(
+    db: AsyncSession, personality_id: int, status: str, error: str | None, *, got_new: bool
+) -> None:
+    """Santé de collecte d'un handle (C4). 'ok' remet à zéro le compteur d'échecs."""
+    pr = await db.get(Personality, personality_id)
+    if pr:
+        now = datetime.now(timezone.utc)
+        pr.last_checked_at = now
+        pr.last_status = status
+        pr.last_error = error
+        pr.consecutive_failures = (pr.consecutive_failures or 0) + 1 if status != "ok" else 0
+        if got_new:
+            pr.last_collected_at = now
+        await db.commit()
+
+
+async def run_collection(use_html: bool | None = None) -> dict:
+    """One full sweep over the active pool. Returns summary stats.
+
+    Uses HTML (with engagement) when a self-hosted Nitter is configured OR a public
+    instance still serves the timeline HTML (probed once per pass), else RSS (no
+    engagement). Per-handle RSS fallback if HTML is blocked. Override with `use_html`.
+    """
+    factory = get_session_factory()
+    client = NitterClient()
+
+    async with factory() as db:
+        result = await db.execute(
+            select(Personality).where(
+                Personality.is_active.is_(True),
+                Personality.handle.isnot(None),
+            )
+        )
+        personalities = list(result.scalars().all())
+
+        run = CollectionRun(
+            kind=RunKind.X,
+            status=RunStatus.RUNNING,
+            personalities_polled=len(personalities),
+        )
+        db.add(run)
+        await db.commit()
+        await db.refresh(run)
+        run_id = run.id
+
+    if use_html is None:
+        # Nitter n'est plus qu'un repli : la syndication officielle est la voie
+        # primaire. On ne SONDE donc plus les instances publiques à chaque passe
+        # — elles sont toutes tombées depuis la mise en demeure de X Corp, et le
+        # sondage ne produisait que des `nitter.html_error` et cinq secondes
+        # perdues. Le HTML n'est tenté que si une instance auto-hébergée est
+        # explicitement configurée.
+        use_html = bool(get_settings().nitter_self_hosted.strip())
+    logger.info("collection.start", personalities=len(personalities), use_html=use_html)
+
+    total_new = 0
+    errors = 0
+    instance_used: str | None = None
+
+    synd = SyndicationClient()
+
+    async def worker(p: Personality) -> None:
+        nonlocal total_new, errors, instance_used
+        status, error, new = "ok", None, 0
+        async with factory() as db:
+            try:
+                # 1) Syndication officielle X (widgets embarqués) : texte intégral,
+                #    engagement, quote/RT distingués — sans compte ni proxy. C'est
+                #    la voie primaire depuis la mise en demeure contre Nitter.
+                posts = await synd.collect(p.handle) if p.handle else None
+                if posts is not None:
+                    new = await _insert_new(db, p.id, posts)
+                    total_new += new
+                    instance_used = "syndication"
+                    # Timeline servie mais vide = compte protégé/suspendu/muet :
+                    # visible dans la santé (C4) plutôt que confondu avec « ok ».
+                    if not posts:
+                        # Timeline syndication vide sur un compte pourtant actif
+                        # (vu : 12 813 tweets, 0 en syndication) : repli par
+                        # identifiants archivés (Wayback CDX → fxtwitter), borné.
+                        try:
+                            bf = await run_archive_backfill(
+                                handles=[p.handle], since_year=datetime.now(timezone.utc).year,
+                                per_handle=40, max_fetch=40,
+                            )
+                            new = bf.get("inserted", 0)
+                            total_new += new
+                        except Exception as exc:  # noqa: BLE001
+                            logger.warning("collect.backfill_fallback_error", handle=p.handle, error=str(exc)[:120])
+                        status = "ok" if new else "empty"
+                        error = None if new else "syndication : aucune entrée"
+                    prof = synd.last_profile
+                    if prof:
+                        obj = await db.get(Personality, p.id)
+                        if obj is not None:
+                            obj.x_user_id = prof.get("x_user_id") or obj.x_user_id
+                            obj.followers_count = prof.get("followers_count")
+                            obj.statuses_count = prof.get("statuses_count")
+                            obj.x_protected = prof.get("x_protected")
+                            obj.profile_refreshed_at = datetime.now(timezone.utc)
+                            await db.commit()
+                    await _record_handle_health(db, p.id, status, error, got_new=new > 0)
+                    return
+                # 2) Repli Nitter (HTML puis RSS) tant qu'une instance existe.
+                if use_html:
+                    new, inst = await collect_one_html(client, db, p, max_pages=1)
+                    if inst is None:  # HTML bloqué pour ce handle → repli RSS (sans engagement)
+                        new, inst = await _collect_one(client, db, p)
+                else:
+                    new, inst = await _collect_one(client, db, p)
+                total_new += new
+                if inst:
+                    instance_used = inst
+                else:
+                    status = "blocked"  # toutes les instances ont refusé ce handle
+            except Exception as exc:  # noqa: BLE001
+                errors += 1
+                status, error = "error", str(exc)[:200]
+                logger.warning("collect.error", handle=p.handle, error=str(exc)[:160])
+            # Santé du handle (C4) : un @ muet récurrent (mauvais handle, instance qui
+            # bloque) devient visible via consecutive_failures.
+            await _record_handle_health(db, p.id, status, error, got_new=new > 0)
+
+    # Bounded concurrency is enforced inside NitterClient via its semaphore.
+    await asyncio.gather(*(worker(p) for p in personalities))
+
+    # Texte intégral des tweets tronqués à 280 par la syndication (note tweets) :
+    # une déclaration extraite d'un texte coupé serait fausse par omission.
+    enrich_stats = await enrich_truncated_posts(limit=300)
+
+    async with factory() as db:
+        run = await db.get(CollectionRun, run_id)
+        if run:
+            run.status = RunStatus.COMPLETED
+            run.completed_at = datetime.now(timezone.utc)
+            run.posts_new = total_new
+            run.errors = errors
+            run.instance_used = instance_used
+            await db.commit()
+
+    stats = {
+        "run_id": run_id,
+        "personalities_polled": len(personalities),
+        "posts_new": total_new,
+        "errors": errors,
+        "instance_used": instance_used,
+        "truncated_expanded": enrich_stats.get("expanded", 0),
+    }
+    logger.info("collection.complete", **stats)
+    return stats
