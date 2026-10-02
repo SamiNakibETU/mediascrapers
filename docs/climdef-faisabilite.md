@@ -137,9 +137,9 @@ Cet écosystème bouge tous les trimestres : à revérifier avant chaque démarr
 | Voie | Recherche | Cascades | Profils / bios | Abonnés | Coût | Risque | Verdict |
 |---|---|---|---|---|---|---|---|
 | **A. Syndication + fxtwitter + Wayback** (actuel) | non | non | oui (1er cercle) | non | 0 | endpoint non documenté, signalé instable par des tiers depuis 2025 et sans nouveau contenu chez certains depuis avril 2026 ; fonctionnait en production ED Mediawatch en août-septembre 2026 ; peut fermer sans préavis | socle de la veille de fond **tant qu'il répond** ; à sonder chaque jour |
-| **B. Zeeschuimer + 4CAT** (capture navigateur, DMI Amsterdam) | oui (ce que l'analyste fait défiler) | oui (fils de réponses) | oui | non | 0 ; temps humain | le plus faible : on collecte ce qu'un compte connecté voit ; compte X personnel requis | **voie crise n° 1** pour une cellule de 2 à 3 analystes : des milliers à dizaines de milliers de posts par épisode |
-| **C. API X à l'usage** (`search/recent`, `conversation_id`, `users`) | oui, 7 jours glissants | oui | oui | payant | ≈ 0,005 $/tweet ; quelques centaines d'euros par crise, prépayé | nul juridiquement ; pas de rétrospectif au-delà de 7 jours | **voie crise n° 2**, complémentaire de B : automatisable, volumétrique, horodatage exact |
-| **D. twscrape** (GraphQL, pool de comptes + proxies résidentiels) | oui | oui (`tweet_replies`, `retweeters`) | oui | oui | 5 à 20 comptes « jetables », proxies | élevé techniquement : suspensions, bugs de pagination de la recherche depuis mars 2026 ; risque CGU atténué pour les chercheurs éligibles 40(12) depuis juillet 2026 | **voie de secours** si B et C ne suffisent pas ; nécessite une décision IRIS sur les comptes |
+| **B. Pool de comptes X + twscrape** (ce que Nitter faisait en interne : API GraphQL de X avec les cookies d'un compte) | oui | oui (`tweet_replies`, `retweeters`) | oui | oui | 0 hors comptes ; 5 à 20 comptes créés par l'équipe, un proxy résidentiel par compte (quelques dizaines d'euros par mois, ou des IP de box) | suspensions de comptes à prévoir et à remplacer ; bug de pagination de la recherche depuis mars 2026 (recouper par plusieurs requêtes) ; contre les CGU, mais l'IRIS est éligible à la levée d'interdiction DSA de juillet 2026 | **voie crise n° 1** : la seule gratuite qui donne recherche, cascades, retweeteurs et abonnés en volume |
+| **C. Zeeschuimer + 4CAT** (capture navigateur, DMI Amsterdam) | oui (ce que l'analyste fait défiler) | oui (fils de réponses) | oui | non | 0 ; temps humain | le plus faible : on collecte ce qu'un compte connecté voit | **voie crise n° 2**, filet de sécurité manuel des analystes si le pool tombe |
+| D. API X à l'usage (`search/recent`, `conversation_id`) | oui, 7 jours glissants | oui | oui | payant | ≈ 0,005 $/tweet | nul juridiquement ; pas de rétrospectif | **non retenue** : l'équipe ne veut pas de budget API ; à garder en tête seulement si le pool de comptes devenait intenable |
 | **E. Accès chercheur DSA** 40(12) via X, 40(4) via Arcom | oui | oui | oui | oui | 0 | délai de 3 à 9 mois, issue incertaine | **à déposer dès maintenant** pour la version 2027 de l'étude |
 | F. Nitter auto-hébergé | oui | oui | oui | oui | serveur + jetons de comptes | projet archivé le 11 septembre 2026, mises en demeure | **écarté** |
 | G. Revendeurs de données (Bright Data, Apify…) | oui | oui | oui | oui | à l'usage | traçabilité et licéité faibles pour un livrable DGRIS | écarté |
@@ -156,13 +156,20 @@ Deux précisions sur l'existant :
 
 ### 3.3 Pourquoi « des plateformes comme Nitter y arrivent et pas nous »
 
-Elles n'y arrivent plus. Depuis février 2024, une instance Nitter ne fonctionnait qu'alimentée
-par les jetons de session de vrais comptes X ; depuis août 2026, elle expose son opérateur à
-une mise en demeure. Ce qui reste accessible sans contrat, c'est ce qu'un compte X connecté
-voit dans son navigateur (voie B), ce que l'on paie à l'usage (voie C), ou ce que l'on obtient
-par un pool de comptes au prix d'une fragilité permanente (voie D). Le point dur n'est donc
-plus technique mais **budgétaire et organisationnel** : un budget API par crise, ou une
-décision sur les comptes, et surtout le dépôt du dossier DSA qui, à terme, règle la question.
+Le logiciel Nitter est mort, mais **le mécanisme est reproductible et gratuit hors comptes**.
+Depuis février 2024, Nitter ne faisait plus qu'une chose : appeler l'API GraphQL interne de X
+avec les cookies de vrais comptes. La bibliothèque Python `twscrape` fait exactement cela,
+est maintenue (commits d'août 2026) et expose ce qui manque au dépôt : recherche, tweets et
+réponses d'un utilisateur, détail d'un tweet, réponses sous un tweet, retweeteurs, abonnés,
+abonnements, profils. Elle gère un pool de comptes et bascule quand l'un est limité. Les
+quotas internes sont par compte et par quart d'heure (quelques dizaines de requêtes de
+recherche, une vingtaine de tweets chacune) : dix comptes suffisent à une veille mots-clés
+toutes les quinze minutes. Ce que cela demande : des comptes créés avec des numéros et des
+mails distincts et vieillis quelques semaines, un proxy résidentiel ou une IP de box par
+compte, et l'acceptation que certains comptes soient suspendus et remplacés. Le point dur
+n'est donc pas technique : il est **organisationnel** (qui crée et porte les comptes) et se
+couvre juridiquement par le dossier DSA, puisque le plan d'action de juillet 2026 oblige X à
+lever l'interdiction de collecte pour les chercheurs éligibles.
 
 ### 3.4 Autres plateformes à ne pas oublier
 
@@ -204,8 +211,8 @@ décision de l'équipe. Durée : 7 à 21 jours.
 
 - Cadence syndication 15 min sur la liste élargie.
 - **Recherche par mots-clés** (toponymes, hashtags, « bilan », « morts », « HAARP », « géo-ingénierie »,
-  « 112 », « France Alert », noms des ministres) toutes les 15 min via l'API à l'usage (voie C),
-  doublée par la capture navigateur des analystes (voie B).
+  « 112 », « France Alert », noms des ministres) toutes les 15 min via le pool de comptes
+  (voie B), doublée par la capture navigateur des analystes (voie C).
 - **Cascades** : pour tout tweet dépassant un seuil (par ex. 200 RT) ou émis par un compte
   officiel, récupération de l'arbre de réponses et de citations, re-visité à J+1 et J+3.
 - **Snowball** : les comptes qui apparaissent plus de N fois comme amplificateurs entrent dans
@@ -223,7 +230,7 @@ décision de l'équipe. Durée : 7 à 21 jours.
           │
   ┌───────┴────────────────────────────────────────────────────────┐
   │ collecteurs (mediascrapers)                                    │
-  │  x.syndication  x.backfill  x.api*  x.thread*  zeeschuimer_in* │
+  │  x.syndication  x.backfill  x.graphql* (pool)  zeeschuimer_in* │
   │  press.feed+extract        telegram*          archive.wayback  │
   └───────┬────────────────────────────────────────────────────────┘
           │  Post / Profile / Article / Message (dataclasses, JSONL)
@@ -290,10 +297,10 @@ relaient, pas qui les relaie). Les voies B, C ou D le rendent **complet** sur un
   hachés, pas de citation nominative sous un seuil d'audience). Tenir un registre de traitement
   IRIS et une durée de conservation (proposition : 3 ans, données brutes chiffrées).
 - **Conditions d'utilisation de X** : la voie A s'appuie sur un endpoint public non documenté,
-  la voie D sur un pool de comptes. Le risque est la suspension des comptes et, en théorie,
+  la voie B sur un pool de comptes. Le risque est la suspension des comptes et, en théorie,
   une action civile ; les mises en demeure d'août 2026 ont visé Nitter, pas des instituts de
   recherche, et le plan d'action DSA de juillet 2026 lève l'interdiction de collecte pour les
-  chercheurs éligibles. L'IRIS doit néanmoins l'accepter explicitement. Les voies B, C et E
+  chercheurs éligibles. L'IRIS doit néanmoins l'accepter explicitement. Les voies C et E
   suppriment ce risque.
 - **DSA article 40** : deux dossiers à déposer en parallèle, le formulaire « DSA vetted
   researchers » de X (article 40(12), données publiques, gratuit) et une demande 40(4) sur le
@@ -309,9 +316,9 @@ relaient, pas qui les relaie). Les voies B, C ou D le rendent **complet** sur un
 
 | Phase | Durée | Contenu | Prérequis |
 |---|---|---|---|
-| **0. Décisions** | 1 semaine | budget API à l'usage par crise (voie C), comptes X des analystes pour Zeeschuimer (voie B), dépôt des deux dossiers DSA, liste initiale de comptes / mots-clés / canaux par l'équipe Climat ; sonde quotidienne de l'endpoint de syndication | réunion IRIS |
+| **0. Décisions** | 1 semaine | qui crée et porte les 5 à 20 comptes X du pool et sur quelles IP ; dépôt des deux dossiers DSA ; liste initiale de comptes / mots-clés / canaux par l'équipe Climat ; sonde quotidienne de l'endpoint de syndication | réunion IRIS |
 | **1. Socle froid** | 2 semaines | module `storage` (SQLite, migrations, séries de métriques), `watch --mode cold`, listes YAML, Telegram, liste de sources presse « État + relais », export GEXF, tableau de bord minimal | aucun |
-| **2. Voie crise** | 3 semaines | client API v2 à l'usage (`search/recent`, `conversation_id`, `users`), compteur de dépense et plafond ; importateur des exports Zeeschuimer / 4CAT dans le même modèle `Post` / `Profile` ; en option, adaptateur twscrape derrière la même interface | clés API, comptes analystes |
+| **2. Voie crise** | 3 semaines | module `x.graphql` adossé à twscrape (recherche, réponses, retweeteurs, abonnés, profils) normalisé dans `Post` / `Profile` ; gestionnaire de pool (ajout par cookies, santé, rotation, remplacement) ; recoupement des recherches pour contrer le bug de pagination ; importateur des exports Zeeschuimer / 4CAT | 2 à 3 comptes pour valider, puis le pool |
 | **3. Analyse** | 3 semaines | construction du graphe, Leiden, indicateurs de coordination, codebook FIMI × narratifs en prompt, validation inter-annotateurs sur 200 contenus, gabarits de figures pour la note | données de la phase 1 |
 | **4. Exercice à blanc** | 1 semaine | rejouer la DANA 2024 ou un épisode cévenol récent à partir des archives (Wayback + fxtwitter) pour calibrer seuils et cadences ; procédure d'activation écrite (qui déclenche, qui scrolle, qui archive) | phases 1 à 3 |
 
@@ -323,10 +330,10 @@ chaque semaine de ligne de base acquise avant la première crise a de la valeur.
 
 - **Faisable en l'état pour la veille de fond** sur une liste de comptes, avec bios et premier
   cercle, dès que le stockage et la boucle de collecte sont écrits (phase 1).
-- **Pas faisable en l'état pour une crise** : il manque la recherche et les cascades. Nitter
-  n'est plus une option. La réponse est un **petit budget API à l'usage par crise** (quelques
-  centaines d'euros), la **capture navigateur des analystes** (Zeeschuimer + 4CAT), et le
-  dépôt immédiat des **dossiers DSA** pour la suite.
+- **Pas faisable en l'état pour une crise** : il manque la recherche et les cascades. Le
+  logiciel Nitter n'est plus une option, mais son mécanisme l'est : un **pool de comptes X
+  créés par l'équipe** derrière twscrape, sans budget API, avec la **capture navigateur des
+  analystes** en filet de sécurité et le dépôt immédiat des **dossiers DSA** comme couverture.
 - **Le bon investissement immédiat** : lancer la phase 0 (décisions, dossier DSA, listes) et la
   phase 1 (socle froid) sans attendre, et brancher Telegram et la presse d'État, qui couvrent
   l'amont des campagnes observées dans la note.
