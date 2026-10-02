@@ -1,0 +1,609 @@
+{
+  "version": "1.0",
+  "description": "French online press, general and partisan outlets. Edit freely; is_active=false keeps a dead feed on record.",
+  "sources": [
+    {
+      "id": "frontieres",
+      "name": "Frontières",
+      "rss_url": "https://frontieres.media/feed/",
+      "homepage": "https://frontieres.media",
+      "language": "fr",
+      "country": "FR",
+      "category": "pure_player",
+      "leaning": "far_right",
+      "is_active": false
+    },
+    {
+      "id": "valeurs_actuelles",
+      "name": "Valeurs actuelles",
+      "rss_url": "https://www.valeursactuelles.com/feed",
+      "homepage": "https://www.valeursactuelles.com",
+      "language": "fr",
+      "country": "FR",
+      "category": "magazine",
+      "leaning": "far_right"
+    },
+    {
+      "id": "bvoltaire",
+      "name": "Boulevard Voltaire",
+      "rss_url": "https://www.bvoltaire.fr/feed/",
+      "homepage": "https://www.bvoltaire.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "pure_player",
+      "leaning": "far_right"
+    },
+    {
+      "id": "causeur",
+      "name": "Causeur",
+      "rss_url": "https://www.causeur.fr/feed",
+      "homepage": "https://www.causeur.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "magazine",
+      "leaning": "far_right"
+    },
+    {
+      "id": "breizh_info",
+      "name": "Breizh-Info",
+      "rss_url": "https://www.breizh-info.com/feed/",
+      "homepage": "https://www.breizh-info.com",
+      "language": "fr",
+      "country": "FR",
+      "category": "pure_player",
+      "leaning": "far_right"
+    },
+    {
+      "id": "lincorrect",
+      "name": "L'Incorrect",
+      "rss_url": "https://lincorrect.org/feed/",
+      "homepage": "https://lincorrect.org",
+      "language": "fr",
+      "country": "FR",
+      "category": "magazine",
+      "leaning": "far_right"
+    },
+    {
+      "id": "lefigaro",
+      "name": "Le Figaro",
+      "rss_url": "https://www.lefigaro.fr/rss/figaro_actualites.xml",
+      "homepage": "https://www.lefigaro.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "national",
+      "leaning": "right"
+    },
+    {
+      "id": "lepoint",
+      "name": "Le Point",
+      "rss_url": "https://www.lepoint.fr/24h.xml",
+      "homepage": "https://www.lepoint.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "national",
+      "leaning": "right",
+      "is_active": false
+    },
+    {
+      "id": "marianne",
+      "name": "Marianne",
+      "rss_url": "https://www.marianne.net/rss.xml",
+      "homepage": "https://www.marianne.net",
+      "language": "fr",
+      "country": "FR",
+      "category": "magazine",
+      "leaning": "center"
+    },
+    {
+      "id": "lemonde",
+      "name": "Le Monde",
+      "rss_url": "https://www.lemonde.fr/rss/une.xml",
+      "homepage": "https://www.lemonde.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "national",
+      "leaning": "center"
+    },
+    {
+      "id": "franceinfo",
+      "name": "France Info",
+      "rss_url": "https://www.francetvinfo.fr/titres.rss",
+      "homepage": "https://www.francetvinfo.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "national",
+      "leaning": "center"
+    },
+    {
+      "id": "liberation",
+      "name": "Libération",
+      "rss_url": "https://www.liberation.fr/arc/outboundfeeds/rss/?outputType=xml",
+      "homepage": "https://www.liberation.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "national",
+      "leaning": "left"
+    },
+    {
+      "id": "20minutes",
+      "name": "20 Minutes",
+      "rss_url": "https://www.20minutes.fr/feeds/rss-une.xml",
+      "homepage": "https://www.20minutes.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "national",
+      "leaning": "center"
+    },
+    {
+      "id": "mediapart",
+      "name": "Mediapart",
+      "rss_url": "https://www.mediapart.fr/articles/feed",
+      "homepage": "https://www.mediapart.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "pure_player",
+      "leaning": "left"
+    },
+    {
+      "id": "politis",
+      "name": "Politis",
+      "rss_url": "https://www.politis.fr/flux-rss-apps/",
+      "homepage": "https://www.politis.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "magazine",
+      "leaning": "left"
+    },
+    {
+      "id": "humanite",
+      "name": "L'Humanité",
+      "rss_url": "https://www.humanite.fr/rss",
+      "homepage": "https://www.humanite.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "national",
+      "leaning": "left"
+    },
+    {
+      "id": "regards",
+      "name": "Regards",
+      "rss_url": "https://regards.fr/feed/",
+      "homepage": "https://regards.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "pure_player",
+      "leaning": "left"
+    },
+    {
+      "id": "basta",
+      "name": "Basta!",
+      "rss_url": "https://basta.media/spip.php?page=backend",
+      "homepage": "https://basta.media",
+      "language": "fr",
+      "country": "FR",
+      "category": "pure_player",
+      "leaning": "far_left"
+    },
+    {
+      "id": "revolution_permanente",
+      "name": "Révolution Permanente",
+      "rss_url": "https://www.revolutionpermanente.fr/spip.php?page=backend_portada",
+      "homepage": "https://www.revolutionpermanente.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "pure_player",
+      "leaning": "far_left"
+    },
+    {
+      "id": "frustration",
+      "name": "Frustration Magazine",
+      "rss_url": "https://www.frustrationmagazine.fr/feed/",
+      "homepage": "https://www.frustrationmagazine.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "pure_player",
+      "leaning": "far_left"
+    },
+    {
+      "id": "rapportsdeforce",
+      "name": "Rapports de force",
+      "rss_url": "https://rapportsdeforce.fr/feed",
+      "homepage": "https://rapportsdeforce.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "pure_player",
+      "leaning": "far_left"
+    },
+    {
+      "id": "ouestfrance",
+      "name": "Ouest-France",
+      "rss_url": "https://www.ouest-france.fr/rss/une",
+      "homepage": "https://www.ouest-france.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "regional",
+      "leaning": "center"
+    },
+    {
+      "id": "ladepeche",
+      "name": "La Dépêche du Midi",
+      "rss_url": "https://www.ladepeche.fr/rss.xml",
+      "homepage": "https://www.ladepeche.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "regional",
+      "leaning": "center"
+    },
+    {
+      "id": "sudouest",
+      "name": "Sud Ouest",
+      "rss_url": "https://www.sudouest.fr/rss.xml",
+      "homepage": "https://www.sudouest.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "regional",
+      "leaning": "center"
+    },
+    {
+      "id": "lavoixdunord",
+      "name": "La Voix du Nord",
+      "rss_url": "https://www.lavoixdunord.fr/rss/une.xml",
+      "homepage": "https://www.lavoixdunord.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "regional",
+      "leaning": "center",
+      "is_active": false
+    },
+    {
+      "id": "letelegramme",
+      "name": "Le Télégramme",
+      "rss_url": "https://www.letelegramme.fr/rss.xml",
+      "homepage": "https://www.letelegramme.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "regional",
+      "leaning": "center"
+    },
+    {
+      "id": "nicematin",
+      "name": "Nice-Matin",
+      "rss_url": "https://www.nicematin.com/rss",
+      "homepage": "https://www.nicematin.com",
+      "language": "fr",
+      "country": "FR",
+      "category": "regional",
+      "leaning": "center"
+    },
+    {
+      "id": "dna",
+      "name": "Dernières Nouvelles d'Alsace",
+      "rss_url": "https://www.dna.fr/rss",
+      "homepage": "https://www.dna.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "regional",
+      "leaning": "center"
+    },
+    {
+      "id": "la-croix",
+      "name": "La Croix",
+      "rss_url": "https://www.la-croix.com/rss",
+      "homepage": "https://www.la-croix.com",
+      "language": "fr",
+      "country": "FR",
+      "category": "national",
+      "leaning": "center"
+    },
+    {
+      "id": "l-express",
+      "name": "L'Express",
+      "rss_url": "https://www.lexpress.fr/rss/une.xml",
+      "homepage": "https://www.lexpress.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "magazine",
+      "leaning": "center"
+    },
+    {
+      "id": "l-obs",
+      "name": "L'Obs",
+      "rss_url": "https://www.nouvelobs.com/rss.xml",
+      "homepage": "https://www.nouvelobs.com",
+      "language": "fr",
+      "country": "FR",
+      "category": "magazine",
+      "leaning": "left"
+    },
+    {
+      "id": "challenges",
+      "name": "Challenges",
+      "rss_url": "https://www.challenges.fr/rss.xml",
+      "homepage": "https://www.challenges.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "magazine",
+      "leaning": "center"
+    },
+    {
+      "id": "charlie-hebdo",
+      "name": "Charlie Hebdo",
+      "rss_url": "https://charliehebdo.fr/rss",
+      "homepage": "https://charliehebdo.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "magazine",
+      "leaning": "center"
+    },
+    {
+      "id": "le-journal-du-dimanche-jdd",
+      "name": "Le Journal du Dimanche (JDD)",
+      "rss_url": "https://www.lejdd.fr/rss.xml",
+      "homepage": "https://www.lejdd.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "magazine",
+      "leaning": "right"
+    },
+    {
+      "id": "france-inter",
+      "name": "France Inter",
+      "rss_url": "https://www.radiofrance.fr/franceinter/rss",
+      "homepage": "https://www.radiofrance.fr/franceinter",
+      "language": "fr",
+      "country": "FR",
+      "category": "national",
+      "leaning": "center"
+    },
+    {
+      "id": "france-culture",
+      "name": "France Culture",
+      "rss_url": "https://www.radiofrance.fr/franceculture/rss",
+      "homepage": "https://www.radiofrance.fr/franceculture",
+      "language": "fr",
+      "country": "FR",
+      "category": "national",
+      "leaning": "center"
+    },
+    {
+      "id": "europe-1",
+      "name": "Europe 1",
+      "rss_url": "https://www.europe1.fr/rss.xml",
+      "homepage": "https://www.europe1.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "national",
+      "leaning": "center"
+    },
+    {
+      "id": "cnews",
+      "name": "CNews",
+      "rss_url": "https://www.cnews.fr/rss.xml",
+      "homepage": "https://www.cnews.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "national",
+      "leaning": "far_right"
+    },
+    {
+      "id": "lci",
+      "name": "LCI",
+      "rss_url": "https://www.tf1info.fr/feeds/rss-une.xml",
+      "homepage": "https://www.tf1info.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "national",
+      "leaning": "center"
+    },
+    {
+      "id": "afp",
+      "name": "AFP",
+      "rss_url": "https://www.afp.com/fr/rss.xml",
+      "homepage": "https://www.afp.com/fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "national",
+      "leaning": "center"
+    },
+    {
+      "id": "konbini",
+      "name": "Konbini",
+      "rss_url": "https://www.konbini.com/fr/feed",
+      "homepage": "https://www.konbini.com/fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "pure_player",
+      "leaning": "center"
+    },
+    {
+      "id": "slate",
+      "name": "Slate",
+      "rss_url": "https://www.slate.fr/rss.xml",
+      "homepage": "https://www.slate.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "pure_player",
+      "leaning": "center"
+    },
+    {
+      "id": "atlantico",
+      "name": "Atlantico",
+      "rss_url": "https://atlantico.fr/rss.xml",
+      "homepage": "https://atlantico.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "pure_player",
+      "leaning": "right"
+    },
+    {
+      "id": "reporterre",
+      "name": "Reporterre",
+      "rss_url": "https://reporterre.net/rss",
+      "homepage": "https://reporterre.net",
+      "language": "fr",
+      "country": "FR",
+      "category": "pure_player",
+      "leaning": "center"
+    },
+    {
+      "id": "front-populaire",
+      "name": "Front Populaire",
+      "rss_url": "https://frontpopulaire.fr/rss",
+      "homepage": "https://frontpopulaire.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "magazine",
+      "leaning": "center"
+    },
+    {
+      "id": "elements",
+      "name": "Elements",
+      "rss_url": "https://www.revue-elements.com/rss",
+      "homepage": "https://www.revue-elements.com",
+      "language": "fr",
+      "country": "FR",
+      "category": "magazine",
+      "leaning": "far_right"
+    },
+    {
+      "id": "tv-libertes",
+      "name": "TV Libertes",
+      "rss_url": "https://www.tvlibertes.com/feed",
+      "homepage": "https://www.tvlibertes.com",
+      "language": "fr",
+      "country": "FR",
+      "category": "national",
+      "leaning": "far_right"
+    },
+    {
+      "id": "fdesouche",
+      "name": "Fdesouche",
+      "rss_url": "https://www.fdesouche.com/rss",
+      "homepage": "https://www.fdesouche.com",
+      "language": "fr",
+      "country": "FR",
+      "category": "national",
+      "leaning": "far_right"
+    },
+    {
+      "id": "riposte-laique",
+      "name": "Riposte Laique",
+      "rss_url": "https://ripostelaique.com/rss",
+      "homepage": "https://ripostelaique.com",
+      "language": "fr",
+      "country": "FR",
+      "category": "pure_player",
+      "leaning": "far_right"
+    },
+    {
+      "id": "le-progres",
+      "name": "Le Progres",
+      "rss_url": "https://www.leprogres.fr/rss",
+      "homepage": "https://www.leprogres.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "regional",
+      "leaning": "center"
+    },
+    {
+      "id": "le-dauphine-libere",
+      "name": "Le Dauphine Libere",
+      "rss_url": "https://www.ledauphine.com/rss",
+      "homepage": "https://www.ledauphine.com",
+      "language": "fr",
+      "country": "FR",
+      "category": "regional",
+      "leaning": "center"
+    },
+    {
+      "id": "l-est-republicain",
+      "name": "L'Est Republicain",
+      "rss_url": "https://www.estrepublicain.fr/rss",
+      "homepage": "https://www.estrepublicain.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "regional",
+      "leaning": "center"
+    },
+    {
+      "id": "le-republicain-lorrain",
+      "name": "Le Republicain Lorrain",
+      "rss_url": "https://www.republicain-lorrain.fr/rss",
+      "homepage": "https://www.republicain-lorrain.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "regional",
+      "leaning": "center"
+    },
+    {
+      "id": "l-alsace",
+      "name": "L'Alsace",
+      "rss_url": "https://www.lalsace.fr/rss",
+      "homepage": "https://www.lalsace.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "regional",
+      "leaning": "center"
+    },
+    {
+      "id": "le-bien-public",
+      "name": "Le Bien Public",
+      "rss_url": "https://www.bienpublic.com/rss",
+      "homepage": "https://www.bienpublic.com",
+      "language": "fr",
+      "country": "FR",
+      "category": "regional",
+      "leaning": "center"
+    },
+    {
+      "id": "midi-libre",
+      "name": "Midi Libre",
+      "rss_url": "https://www.midilibre.fr/rss.xml",
+      "homepage": "https://www.midilibre.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "regional",
+      "leaning": "center"
+    },
+    {
+      "id": "l-independant",
+      "name": "L'Independant",
+      "rss_url": "https://www.lindependant.fr/rss.xml",
+      "homepage": "https://www.lindependant.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "regional",
+      "leaning": "center"
+    },
+    {
+      "id": "var-matin",
+      "name": "Var-Matin",
+      "rss_url": "https://www.varmatin.com/rss",
+      "homepage": "https://www.varmatin.com",
+      "language": "fr",
+      "country": "FR",
+      "category": "regional",
+      "leaning": "center"
+    },
+    {
+      "id": "charente-libre",
+      "name": "Charente Libre",
+      "rss_url": "https://www.charentelibre.fr/rss.xml",
+      "homepage": "https://www.charentelibre.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "regional",
+      "leaning": "center"
+    },
+    {
+      "id": "france-3-regions",
+      "name": "France 3 Regions",
+      "rss_url": "https://france3-regions.francetvinfo.fr/arc/outboundfeeds/rss/?outputType=xml",
+      "homepage": "https://france3-regions.francetvinfo.fr",
+      "language": "fr",
+      "country": "FR",
+      "category": "regional",
+      "leaning": "center"
+    }
+  ]
+}

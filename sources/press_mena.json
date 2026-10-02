@@ -1,0 +1,69 @@
+{
+  "version": "1.0",
+  "description": "Middle East press. Template to fill with the MEMW source list; ids must be unique.",
+  "sources": [
+    {
+      "id": "lorient_le_jour",
+      "name": "L'Orient-Le Jour",
+      "rss_url": "https://www.lorientlejour.com/rss",
+      "homepage": "https://www.lorientlejour.com",
+      "language": "fr",
+      "country": "LB",
+      "category": "daily"
+    },
+    {
+      "id": "al_monitor",
+      "name": "Al-Monitor",
+      "rss_url": "https://www.al-monitor.com/rss",
+      "homepage": "https://www.al-monitor.com",
+      "language": "en",
+      "country": "US",
+      "category": "pure_player"
+    },
+    {
+      "id": "times_of_israel",
+      "name": "The Times of Israel",
+      "rss_url": "https://www.timesofisrael.com/feed/",
+      "homepage": "https://www.timesofisrael.com",
+      "language": "en",
+      "country": "IL",
+      "category": "pure_player"
+    },
+    {
+      "id": "haaretz_en",
+      "name": "Haaretz (English)",
+      "rss_url": "https://www.haaretz.com/srv/haaretz-latest-headlines",
+      "homepage": "https://www.haaretz.com",
+      "language": "en",
+      "country": "IL",
+      "category": "daily"
+    },
+    {
+      "id": "al_jazeera_en",
+      "name": "Al Jazeera English",
+      "rss_url": "https://www.aljazeera.com/xml/rss/all.xml",
+      "homepage": "https://www.aljazeera.com",
+      "language": "en",
+      "country": "QA",
+      "category": "broadcaster"
+    },
+    {
+      "id": "arab_news",
+      "name": "Arab News",
+      "rss_url": "https://www.arabnews.com/rss.xml",
+      "homepage": "https://www.arabnews.com",
+      "language": "en",
+      "country": "SA",
+      "category": "daily"
+    },
+    {
+      "id": "the_national",
+      "name": "The National",
+      "rss_url": "https://www.thenationalnews.com/rss",
+      "homepage": "https://www.thenationalnews.com",
+      "language": "en",
+      "country": "AE",
+      "category": "daily"
+    }
+  ]
+}
