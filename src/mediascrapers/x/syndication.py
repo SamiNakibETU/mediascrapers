@@ -62,6 +62,27 @@ def _trim_cut_link(text: str, *, truncated: bool) -> str:
     return text
 
 
+_SOURCE_TAG_RE = re.compile(r"<[^>]+>")
+
+
+def _source(tweet: dict) -> str | None:
+    """Client application (``Twitter for iPhone``, ``TweetDeck``…), without the anchor tag."""
+    raw = tweet.get("source")
+    if not raw:
+        return None
+    return _SOURCE_TAG_RE.sub("", raw).strip() or None
+
+
+def _entity_lists(entities: dict | None) -> tuple[list[str], list[str], list[str]]:
+    """``(mentions, hashtags, urls)`` from a tweet's ``entities`` block, deduplicated in order."""
+    e = entities or {}
+    mentions = [m.get("screen_name") for m in e.get("user_mentions") or [] if m.get("screen_name")]
+    hashtags = [h.get("text") for h in e.get("hashtags") or [] if h.get("text")]
+    urls = [u.get("expanded_url") or u.get("url") for u in e.get("urls") or []]
+    urls = [u for u in urls if u]
+    return list(dict.fromkeys(mentions)), list(dict.fromkeys(hashtags)), list(dict.fromkeys(urls))
+
+
 def _media_url(tweet: dict) -> str | None:
     """First media item; for videos, the highest-bitrate mp4 variant."""
     ext = tweet.get("extended_entities") or tweet.get("entities") or {}
@@ -120,6 +141,7 @@ def _to_post(tweet: dict, handle: str) -> Post | None:
         else "original"
     )
     url = f"https://x.com/{author}/status/{tid}"
+    mentions, hashtags, urls = _entity_lists(body.get("entities"))
     post = Post(
         guid=post_guid(handle, url),
         handle=handle,
@@ -140,6 +162,14 @@ def _to_post(tweet: dict, handle: str) -> Post | None:
         quotes=tweet.get("quote_count"),
         text_truncated=truncated,
         collected_via=COLLECTED_VIA,
+        tweet_id=tid,
+        conversation_id=tweet.get("conversation_id_str") or tid,
+        author_id=(tweet.get("user") or {}).get("id_str"),
+        reply_to_user_id=tweet.get("in_reply_to_user_id_str"),
+        mentions=mentions,
+        hashtags=hashtags,
+        urls=urls,
+        source=_source(tweet),
     )
 
     # The carried tweet (quoted or retweeted) is the amplification target.
@@ -148,6 +178,7 @@ def _to_post(tweet: dict, handle: str) -> Post | None:
         c_user = (carried.get("user") or {}).get("screen_name")
         c_id = carried.get("id_str")
         post.quoted_handle = c_user
+        post.quoted_user_id = (carried.get("user") or {}).get("id_str")
         post.quoted_url = f"https://x.com/{c_user}/status/{c_id}" if c_user and c_id else None
         if quoted is not None:
             post.quoted_text = _expand_urls(
@@ -165,18 +196,65 @@ def parse_timeline(html: str, handle: str) -> list[Post]:
     return out
 
 
+def _profile_from_user(u: dict, handle: str) -> Profile:
+    website = None
+    for url in ((u.get("entities") or {}).get("url") or {}).get("urls") or []:
+        website = url.get("expanded_url") or url.get("url")
+        if website:
+            break
+    return Profile(
+        handle=u.get("screen_name") or handle,
+        user_id=u.get("id_str"),
+        followers=u.get("followers_count"),
+        statuses=u.get("statuses_count"),
+        protected=bool(u.get("protected", False)),
+        name=u.get("name"),
+        description=(u.get("description") or "").strip() or None,
+        location=(u.get("location") or "").strip() or None,
+        website=website or (u.get("url") or None),
+        created_at=_parse_date(u.get("created_at")),
+        verified=bool(u.get("verified", False)),
+        blue_verified=bool(u.get("is_blue_verified") or u.get("ext_is_blue_verified") or False),
+        following=u.get("friends_count"),
+        likes_given=u.get("favourites_count"),
+        listed=u.get("listed_count"),
+        media_count=u.get("media_count"),
+        profile_image_url=u.get("profile_image_url_https") or u.get("profile_image_url"),
+        collected_at=datetime.now(UTC),
+    )
+
+
 def parse_profile(html: str, handle: str) -> Profile | None:
+    """Profile of ``handle`` as embedded in its own timeline entries."""
     for e in _entries(html):
         u = ((e.get("content") or {}).get("tweet") or {}).get("user") or {}
         if (u.get("screen_name") or "").lower() == handle.lower():
-            return Profile(
-                handle=handle,
-                user_id=u.get("id_str"),
-                followers=u.get("followers_count"),
-                statuses=u.get("statuses_count"),
-                protected=bool(u.get("protected", False)),
-            )
+            return _profile_from_user(u, handle)
     return None
+
+
+def parse_profiles(html: str) -> dict[str, Profile]:
+    """Every user object present in the page, keyed by lowercase handle.
+
+    A timeline carries the profiles of the accounts it retweets, quotes and
+    replies to: one request yields the watched account *and* its immediate
+    neighbourhood, with bios, which is what a snowball on amplifiers starts from.
+    """
+    out: dict[str, Profile] = {}
+
+    def visit(tweet: dict | None) -> None:
+        if not tweet:
+            return
+        u = tweet.get("user") or {}
+        sn = (u.get("screen_name") or "").lower()
+        if sn and sn not in out:
+            out[sn] = _profile_from_user(u, sn)
+        visit(tweet.get("retweeted_status"))
+        visit(tweet.get("quoted_status"))
+
+    for e in _entries(html):
+        visit((e.get("content") or {}).get("tweet"))
+    return out
 
 
 def timeline_state(html: str) -> str:
@@ -194,6 +272,9 @@ class SyndicationClient:
         self.backoff = backoff
         self.rate = RateLimit()
         self.last_profile: Profile | None = None
+        # Every profile seen on the last page: the watched account and the
+        # accounts it amplified or answered (handle, lowercase -> Profile).
+        self.last_profiles: dict[str, Profile] = {}
         self._lock = asyncio.Lock()
 
     async def fetch_timeline(self, handle: str) -> str | None:
@@ -230,8 +311,10 @@ class SyndicationClient:
         html = await self.fetch_timeline(handle)
         if html is None:
             self.last_profile = None
+            self.last_profiles = {}
             return None
         self.last_profile = parse_profile(html, handle)
+        self.last_profiles = parse_profiles(html)
         posts = parse_timeline(html, handle)
         log.info("%s: %d posts", handle, len(posts))
         return posts

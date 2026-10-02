@@ -53,6 +53,16 @@ class Post:
     views: int | None = None
     text_truncated: bool = False
     collected_via: str = ""
+    # Graph fields: what network analysis needs beyond the text.
+    tweet_id: str | None = None
+    conversation_id: str | None = None
+    author_id: str | None = None
+    reply_to_user_id: str | None = None
+    quoted_user_id: str | None = None
+    mentions: list[str] = field(default_factory=list)
+    hashtags: list[str] = field(default_factory=list)
+    urls: list[str] = field(default_factory=list)
+    source: str | None = None
 
     @property
     def is_retweet(self) -> bool:
@@ -76,6 +86,26 @@ class Profile:
     followers: int | None = None
     statuses: int | None = None
     protected: bool = False
+    name: str | None = None
+    description: str | None = None
+    location: str | None = None
+    website: str | None = None
+    created_at: datetime | None = None
+    verified: bool = False
+    blue_verified: bool = False
+    following: int | None = None
+    likes_given: int | None = None
+    listed: int | None = None
+    media_count: int | None = None
+    profile_image_url: str | None = None
+    collected_at: datetime | None = None
+
+    def to_dict(self) -> dict[str, Any]:
+        d = asdict(self)
+        for k in ("created_at", "collected_at"):
+            if d.get(k):
+                d[k] = d[k].isoformat()
+        return d
 
 
 @dataclass(slots=True)

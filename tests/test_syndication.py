@@ -1,6 +1,6 @@
 import json
 
-from mediascrapers.x.syndication import parse_profile, parse_timeline, timeline_state
+from mediascrapers.x.syndication import parse_profile, parse_profiles, parse_timeline, timeline_state
 
 USER = {"screen_name": "J_Bardella", "id_str": "42", "followers_count": 1000}
 
@@ -88,3 +88,51 @@ def test_profile_and_state():
     assert timeline_state(html) == "ok"
     assert timeline_state(page([])) == "empty"
     assert parse_timeline("<html></html>", "x") == []
+
+
+def test_graph_fields_from_entities():
+    t = entry(
+        conversation_id_str="2091800582042333000",
+        in_reply_to_user_id_str="77",
+        source='<a href="http://twitter.com/download/iphone" rel="nofollow">Twitter for iPhone</a>',
+        entities={
+            "urls": [{"url": "https://t.co/abc", "expanded_url": "https://example.org/a"}],
+            "user_mentions": [{"screen_name": "MeteoFrance"}, {"screen_name": "MeteoFrance"}],
+            "hashtags": [{"text": "DANA"}, {"text": "inondations"}],
+        },
+    )
+    (p,) = parse_timeline(page([t]), "J_Bardella")
+    assert p.tweet_id == "2091800582042333264"
+    assert p.conversation_id == "2091800582042333000"
+    assert p.author_id == "42" and p.reply_to_user_id == "77"
+    assert p.source == "Twitter for iPhone"
+    assert p.mentions == ["MeteoFrance"]
+    assert p.hashtags == ["DANA", "inondations"]
+    assert p.urls == ["https://example.org/a"]
+    assert p.to_dict()["mentions"] == ["MeteoFrance"]
+
+
+def test_conversation_id_defaults_to_own_id_and_targets_carry_user_ids():
+    rt = entry(retweeted_status={"id_str": "1", "full_text": "Relayé", "entities": {},
+                                 "user": {"screen_name": "K_Pfeffer", "id_str": "999"}})
+    (p,) = parse_timeline(page([rt]), "J_Bardella")
+    assert p.conversation_id == "2091800582042333264"
+    assert p.quoted_user_id == "999"
+
+
+def test_profile_bio_and_neighbourhood():
+    me = {**USER, "name": "Jordan", "description": " Président du RN ", "location": "Paris",
+          "created_at": "Tue Jun 09 10:00:00 +0000 2015", "friends_count": 12, "verified": True,
+          "is_blue_verified": True, "listed_count": 3, "favourites_count": 5, "media_count": 8,
+          "entities": {"url": {"urls": [{"expanded_url": "https://rn.fr"}]}}}
+    other = {"screen_name": "K_Pfeffer", "id_str": "999", "followers_count": 10, "description": "Journaliste"}
+    html = page([entry(user=me), entry(user=me, id_str="2", retweeted_status={
+        "id_str": "1", "full_text": "Relayé", "entities": {}, "user": other})])
+    prof = parse_profile(html, "J_Bardella")
+    assert prof.description == "Président du RN" and prof.location == "Paris" and prof.name == "Jordan"
+    assert prof.created_at.year == 2015 and prof.following == 12 and prof.listed == 3
+    assert prof.verified and prof.blue_verified and prof.website == "https://rn.fr"
+    assert prof.to_dict()["created_at"].startswith("2015-06-09")
+    around = parse_profiles(html)
+    assert set(around) == {"j_bardella", "k_pfeffer"}
+    assert around["k_pfeffer"].description == "Journaliste" and around["k_pfeffer"].user_id == "999"

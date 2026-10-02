@@ -32,6 +32,19 @@ COLLECTED_VIA = "fxtwitter"
 CDX_PAUSE_SECONDS = 1.0
 
 _STATUS_RE = re.compile(r"/status/(\d{15,20})")
+_HANDLE_RE = re.compile(r"(?<![\w@])@([A-Za-z0-9_]{1,15})")
+_HASHTAG_RE = re.compile(r"(?<![\w#])#([\w\u00C0-\u024F]+)")
+_URL_RE = re.compile(r"https?://[^\s<>\"')\]]+")
+
+
+def _handles_in(text: str) -> list[str]:
+    return list(dict.fromkeys(_HANDLE_RE.findall(text or "")))
+
+
+def _hashtags_in(text: str) -> list[str]:
+    return list(dict.fromkeys(_HASHTAG_RE.findall(text or "")))
+
+
 _FX_DATE_FMT = "%a %b %d %H:%M:%S %z %Y"
 _TWITTER_EPOCH_MS = 1288834974657
 
@@ -125,10 +138,12 @@ def parse_fxtwitter(data: dict, handle: str) -> Post | None:
     tid, text = t.get("id"), (t.get("text") or "").strip()
     if not tid or not text:
         return None
-    author = (t.get("author") or {}).get("screen_name") or handle
+    author_obj = t.get("author") or {}
+    author = author_obj.get("screen_name") or handle
     is_retweet = author.lower() != handle.lower()
     quote = t.get("quote")
     reply_to = t.get("replying_to")
+    reply_to_status = t.get("replying_to_status")
     try:
         published = datetime.strptime(t["created_at"], _FX_DATE_FMT).astimezone(UTC)
     except (KeyError, ValueError):
@@ -148,19 +163,30 @@ def parse_fxtwitter(data: dict, handle: str) -> Post | None:
         post_type=post_type,
         lang=(t.get("lang") or "fr")[:8],
         reply_to_handle=reply_to,
+        reply_to_url=(
+            f"https://x.com/{reply_to}/status/{reply_to_status}" if reply_to and reply_to_status else None
+        ),
         media_url=media,
         likes=t.get("likes"),
         retweets=t.get("retweets"),
         replies=t.get("replies"),
         views=t.get("views"),
         collected_via=COLLECTED_VIA,
+        tweet_id=str(tid),
+        author_id=author_obj.get("id"),
+        source=t.get("source") or None,
+        mentions=_handles_in(text),
+        hashtags=_hashtags_in(text),
+        urls=[u for u in _URL_RE.findall(text) if not u.startswith("https://t.co/")],
     )
     if quote:
         post.quoted_handle = (quote.get("author") or {}).get("screen_name")
+        post.quoted_user_id = (quote.get("author") or {}).get("id")
         post.quoted_url = quote.get("url")
         post.quoted_text = (quote.get("text") or "")[:2000] or None
     elif is_retweet:
         post.quoted_handle = author
+        post.quoted_user_id = author_obj.get("id")
         post.quoted_url = url
     return post
 

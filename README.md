@@ -33,6 +33,9 @@ Python 3.11 or later.
 # last 20-100 tweets of one or more handles, one JSON object per line
 mediascrapers x timeline J_Bardella MLP_officiel > tweets.jsonl
 
+# profile and bio of handles; --neighbours adds every account their timeline relays or answers
+mediascrapers x profile --neighbours MeteoFrance VigicruesFR > profiles.jsonl
+
 # archived tweets since 2022 (Wayback ids, fxtwitter content)
 mediascrapers x backfill J_Bardella --since 2022 --limit 300 > history.jsonl
 
@@ -83,6 +86,20 @@ Pass per-domain cookie headers; they are tried first:
 from mediascrapers.press import Extractor, ExtractorConfig
 extractor = Extractor(ExtractorConfig(cookies={"lemonde.fr": "lmd_a_s=...; lmd_sso=..."}))
 ```
+
+### Fields for network analysis
+
+Beyond the text, every `Post` carries what a graph needs: `tweet_id`,
+`conversation_id`, `author_id`, `reply_to_user_id`, `quoted_user_id` (the
+account amplified by a retweet or quote), `mentions`, `hashtags`, expanded
+`urls` and `source` (publishing client). `Profile` carries the bio,
+location, website, creation date, verification flags and counters.
+`SyndicationClient.last_profiles` holds every profile present on the last
+page fetched, so one request yields the watched account and its first
+circle with bios.
+
+See `docs/climdef-faisabilite.md` for how these feed a two-regime
+monitoring design (background watch, crisis activation).
 
 ### Truncated tweets
 

@@ -83,3 +83,21 @@ def test_fxtwitter_empty_is_none():
 async def test_fetch_tweet_unavailable(status):
     async with httpx.AsyncClient(transport=httpx.MockTransport(lambda r: httpx.Response(status))) as http:
         assert await backfill.fetch_tweet(http, "h", "1") is None
+
+
+def test_fxtwitter_graph_fields():
+    data = {"tweet": {
+        **FX["tweet"],
+        "text": "Réponse à @MeteoFrance sur #DANA https://example.org/x https://t.co/zz",
+        "author": {"screen_name": "J_Bardella", "id": "42"},
+        "replying_to": "MeteoFrance", "replying_to_status": "7", "source": "Twitter Web App",
+        "quote": {"url": "https://x.com/q/status/9", "text": "cité",
+                  "author": {"screen_name": "q", "id": "9"}},
+    }}
+    p = parse_fxtwitter(data, "J_Bardella")
+    assert p.tweet_id == "2091800582042333264" and p.author_id == "42"
+    assert p.reply_to_url == "https://x.com/MeteoFrance/status/7"
+    assert p.source == "Twitter Web App"
+    assert p.mentions == ["MeteoFrance"] and p.hashtags == ["DANA"]
+    assert p.urls == ["https://example.org/x"]
+    assert p.quoted_user_id == "9"

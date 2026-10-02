@@ -29,6 +29,22 @@ async def _x_timeline(args) -> None:
         _emit(posts, sys.stdout)
 
 
+async def _x_profile(args) -> None:
+    """Profile (bio, counters, creation date) of each handle, plus, with
+    ``--neighbours``, every account its timeline retweets, quotes or answers."""
+    client = SyndicationClient(HttpConfig(delay=args.delay))
+    for handle in args.handles:
+        posts = await client.collect(handle)
+        if posts is None:
+            logging.getLogger("mediascrapers").warning("%s: no answer", handle)
+            continue
+        profiles = (
+            list(client.last_profiles.values()) if args.neighbours
+            else [client.last_profile] if client.last_profile else []
+        )
+        _emit(profiles, sys.stdout)
+
+
 async def _x_backfill(args) -> None:
     backfill = Backfill(HttpConfig(delay=args.delay))
     for handle in args.handles:
@@ -69,6 +85,12 @@ def build_parser() -> argparse.ArgumentParser:
     t.add_argument("handles", nargs="+")
     t.add_argument("--delay", type=float, default=2.5)
     t.set_defaults(run=_x_timeline)
+    pr = x.add_parser("profile", help="profile and bio of one or more handles")
+    pr.add_argument("handles", nargs="+")
+    pr.add_argument("--neighbours", action="store_true",
+                    help="also emit the profiles of accounts the timeline retweets, quotes or answers")
+    pr.add_argument("--delay", type=float, default=2.5)
+    pr.set_defaults(run=_x_profile)
     b = x.add_parser("backfill", help="archived tweets since a given year")
     b.add_argument("handles", nargs="+")
     b.add_argument("--since", type=int, default=2022)
