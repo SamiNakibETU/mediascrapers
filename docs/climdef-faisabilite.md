@@ -56,8 +56,9 @@ ni proxy. Trois voies :
 
 Le dossier `ed-mediawatch-x/` contient en plus un client Nitter (RSS + HTML avec pagination par
 curseur et compteurs d'engagement) et un parseur HTML éprouvé. Il est désactivé en production
-« depuis la mise en demeure contre Nitter » : les instances publiques sont mortes, seul un
-auto-hébergement le ferait revivre.
+« depuis la mise en demeure contre Nitter » : les instances publiques sont mortes et, depuis
+l'archivage du projet en septembre 2026 (section 3.1), ce code n'a plus de source à interroger.
+Il reste utile comme référence de parseur et de pagination par curseur.
 
 ### 2.2 Ce qui a été ajouté dans cette révision
 
