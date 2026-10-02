@@ -100,38 +100,70 @@ améliorant le code existant ; elles exigent une **nouvelle voie d'accès aux do
 
 ## 3. Voies d'accès aux données X en 2026
 
-Les faits ci-dessous sont établis à la date de rédaction et sont à revérifier avant chaque
-démarrage : cet écosystème bouge tous les trimestres.
+Les faits ci-dessous ont été vérifiés le 2 octobre 2026 à partir des dépôts de code, des
+communiqués de la Commission européenne et de la presse spécialisée (références en annexe).
+Cet écosystème bouge tous les trimestres : à revérifier avant chaque démarrage.
 
-### 3.1 Comparatif
+### 3.1 Trois événements récents qui changent la donne
+
+1. **Nitter est juridiquement mort.** Le 24 août 2026, X Corp a adressé des mises en demeure
+   au projet et aux instances ; le dépôt `zedeus/nitter` a été archivé en lecture seule le
+   11 septembre 2026 ; les instances publiques sont murées. Le client Nitter de
+   `ed-mediawatch-x/` est à considérer comme du code d'archive. **Il ne faut pas bâtir le mode
+   crise dessus.**
+2. **L'API officielle n'a plus de paliers.** Le palier Free est fermé aux nouveaux comptes
+   depuis février 2026, Basic a été migré de force vers le paiement à l'usage le 1er juin 2026,
+   Pro est en cours de suppression. Le modèle est désormais : environ 0,005 $ par tweet lu,
+   0,010 $ par profil lu, recherche limitée aux 7 derniers jours, `conversation_id` utilisable
+   comme opérateur de recherche, pas d'archive complète hors Enterprise. Ordre de grandeur :
+   100 000 tweets ≈ 500 $, un million ≈ 5 000 $. **Pour une crise de deux semaines, c'est
+   finançable et juridiquement propre.**
+3. **L'accès chercheur DSA devient réel.** Après l'amende de 120 M€ du 5 décembre 2025 (dont
+   40 M€ pour obstruction à l'accès des chercheurs) et la décision du tribunal de Berlin du
+   17 février 2026, la Commission a accepté le 15 juillet 2026 le plan d'action de X : accès
+   **gratuit** aux chercheurs éligibles au titre de l'article 40(12), filtrage des candidatures
+   revu, et **levée de l'interdiction contractuelle de collecte des données publiques pour les
+   chercheurs éligibles**, avec six mois de mise en œuvre (horizon janvier 2027) et audit
+   indépendant. En parallèle, l'acte délégué 2025/2050 (en vigueur depuis le 29 octobre 2025)
+   ouvre la voie 40(4) via le portail européen d'accès aux données, instruite en France par
+   l'Arcom. Les organismes de recherche sans but lucratif et indépendants d'intérêts
+   commerciaux sont éligibles : l'IRIS l'est sur le papier. Les premiers retours (DSA
+   Observatory, mars 2026) décrivent un processus lent, de type dossier de subvention, avec des
+   refus.
+
+### 3.2 Comparatif
 
 | Voie | Recherche | Cascades | Profils / bios | Abonnés | Coût | Risque | Verdict |
 |---|---|---|---|---|---|---|---|
-| **A. Syndication + fxtwitter + Wayback** (actuel) | non | non | oui (1er cercle) | non | 0 | faible, mais endpoint non documenté, peut fermer sans préavis | socle de la veille de fond |
-| **B. Nitter auto-hébergé** | oui (recherche Nitter) | oui (page de statut avec réponses, pagination) | oui | oui (pages followers) | serveur + **jetons de session de comptes X réels** | moyen : les comptes prêteurs peuvent être suspendus ; dépend de la maintenance de Nitter ; zone grise CGU | **meilleur rapport capacités / coût pour le mode crise** |
-| **C. Bibliothèques GraphQL avec pool de comptes** (twscrape, twikit) | oui | oui (`tweet_details` / réponses) | oui | oui | comptes X + proxies résidentiels | élevé : suspensions, cassures de l'API interne, CGU | utile en complément de B, même mécanique de comptes |
-| **D. API officielle X** | Basic : recherche 7 jours, 10 à 15 k tweets / mois ; Pro : recherche complète, `conversation_id`, 1 M tweets / mois | oui via `conversation_id` | oui | Pro | Basic ≈ 200 $/mois ; Pro ≈ 5 000 $/mois | nul juridiquement | Basic insuffisant pour une crise (quota épuisé en une journée) ; Pro hors budget d'une note mais **finançable sur un mois de crise** |
-| **E. Accès chercheur DSA (art. 40)** | oui | oui | oui | oui | 0 | dossier auprès du coordinateur national (ARCOM) et de la plateforme ; délais de plusieurs mois ; X conteste les demandes | **à lancer dès maintenant** pour la version 2027 de l'étude, pas pour une crise cet hiver |
-| **F. Capture navigateur** (Zeeschuimer + 4CAT, DMI Amsterdam) | oui (ce que l'analyste fait défiler) | oui | oui | non | 0 | faible ; manuel ; volume limité à ce qu'on fait défiler | **complément immédiat pour une cellule de 2 à 3 personnes en crise** : chacun ouvre X, scrolle les recherches, 4CAT agrège |
-| G. Revendeurs de données (Bright Data, Apify, etc.) | oui | oui | oui | oui | à l'usage | juridiquement bancal pour une étude publiée ; traçabilité faible | à éviter dans un livrable DGRIS |
+| **A. Syndication + fxtwitter + Wayback** (actuel) | non | non | oui (1er cercle) | non | 0 | endpoint non documenté, signalé instable par des tiers depuis 2025 et sans nouveau contenu chez certains depuis avril 2026 ; fonctionnait en production ED Mediawatch en août-septembre 2026 ; peut fermer sans préavis | socle de la veille de fond **tant qu'il répond** ; à sonder chaque jour |
+| **B. Zeeschuimer + 4CAT** (capture navigateur, DMI Amsterdam) | oui (ce que l'analyste fait défiler) | oui (fils de réponses) | oui | non | 0 ; temps humain | le plus faible : on collecte ce qu'un compte connecté voit ; compte X personnel requis | **voie crise n° 1** pour une cellule de 2 à 3 analystes : des milliers à dizaines de milliers de posts par épisode |
+| **C. API X à l'usage** (`search/recent`, `conversation_id`, `users`) | oui, 7 jours glissants | oui | oui | payant | ≈ 0,005 $/tweet ; quelques centaines d'euros par crise, prépayé | nul juridiquement ; pas de rétrospectif au-delà de 7 jours | **voie crise n° 2**, complémentaire de B : automatisable, volumétrique, horodatage exact |
+| **D. twscrape** (GraphQL, pool de comptes + proxies résidentiels) | oui | oui (`tweet_replies`, `retweeters`) | oui | oui | 5 à 20 comptes « jetables », proxies | élevé techniquement : suspensions, bugs de pagination de la recherche depuis mars 2026 ; risque CGU atténué pour les chercheurs éligibles 40(12) depuis juillet 2026 | **voie de secours** si B et C ne suffisent pas ; nécessite une décision IRIS sur les comptes |
+| **E. Accès chercheur DSA** 40(12) via X, 40(4) via Arcom | oui | oui | oui | oui | 0 | délai de 3 à 9 mois, issue incertaine | **à déposer dès maintenant** pour la version 2027 de l'étude |
+| F. Nitter auto-hébergé | oui | oui | oui | oui | serveur + jetons de comptes | projet archivé le 11 septembre 2026, mises en demeure | **écarté** |
+| G. Revendeurs de données (Bright Data, Apify…) | oui | oui | oui | oui | à l'usage | traçabilité et licéité faibles pour un livrable DGRIS | écarté |
 
-### 3.2 Pourquoi « des plateformes comme Nitter y arrivent et pas nous »
+Deux précisions sur l'existant :
 
-Elles n'y arrivent plus gratuitement. Depuis février 2024, X a fermé les comptes invités ; une
-instance Nitter ne fonctionne qu'alimentée par les jetons de session de **vrais comptes X**
-(script `get_session.py` du projet, un compte peut servir des centaines de requêtes par
-quart d'heure avant limitation). Les instances publiques ont été fermées l'une après l'autre
-par mise en demeure. En revanche, **une instance privée, non indexée, alimentée par trois à
-cinq comptes dédiés, tourne de manière stable** chez de nombreux chercheurs. C'est la voie B.
-Le client et le parseur Nitter existent déjà dans `ed-mediawatch-x/` : il faut les remonter
-dans le paquet, ajouter la recherche et la page de conversation, et les tester contre
-l'instance privée.
+- **fxtwitter** (`api.fxtwitter.com`) fonctionne toujours sans clé et renvoie likes, RT,
+  réponses et vues. Il sert à **réhydrater** des tweets connus par leur URL (métriques dans le
+  temps, texte intégral), pas à en découvrir.
+- **minet** (médialab Sciences Po), auquel on pense naturellement, a sa commande X cassée
+  depuis mai 2025 (ticket ouvert par le mainteneur, non résolu) ; gazouilloire est inactif.
+  Le médialab a réorienté ses connecteurs vers Bluesky, YouTube, Reddit et Telegram, et ces
+  connecteurs-là restent utiles.
 
-Le point dur n'est pas technique, il est **organisationnel** : qui fournit les comptes X, sur
-quels numéros de téléphone, avec quelle traçabilité, et qui assume que ces comptes peuvent être
-suspendus. Il faut une décision de l'IRIS sur ce point avant d'écrire une ligne de la voie B.
+### 3.3 Pourquoi « des plateformes comme Nitter y arrivent et pas nous »
 
-### 3.3 Autres plateformes à ne pas oublier
+Elles n'y arrivent plus. Depuis février 2024, une instance Nitter ne fonctionnait qu'alimentée
+par les jetons de session de vrais comptes X ; depuis août 2026, elle expose son opérateur à
+une mise en demeure. Ce qui reste accessible sans contrat, c'est ce qu'un compte X connecté
+voit dans son navigateur (voie B), ce que l'on paie à l'usage (voie C), ou ce que l'on obtient
+par un pool de comptes au prix d'une fragilité permanente (voie D). Le point dur n'est donc
+plus technique mais **budgétaire et organisationnel** : un budget API par crise, ou une
+décision sur les comptes, et surtout le dépôt du dossier DSA qui, à terme, règle la question.
+
+### 3.4 Autres plateformes à ne pas oublier
 
 La note montre que, dans les crises DANA et Helene, la circulation est partie de Telegram et de
 sites miroirs (Pravda / Portal Kombat), puis a été relayée sur X, Facebook et TikTok. Un
@@ -139,12 +171,12 @@ dispositif centré sur X seul rate l'amont.
 
 | Plateforme | Voie | Faisabilité |
 |---|---|---|
-| **Telegram** | API officielle (Telethon / Pyrogram) sur canaux publics : messages, vues, transferts, horodatages | **élevée, gratuite, stable** ; brique prioritaire n° 2 après X |
+| **Telegram** | API officielle (Telethon, tegracli du Leibniz-HBI) sur canaux publics : historique complet, vues, transferts, réactions, commentaires | **élevée, gratuite, stable** ; brique prioritaire n° 2 après X ; limites de débit (environ 200 résolutions de noms par jour et par compte) |
 | Sites Pravda / Portal Kombat, médias d'État | `mediascrapers.press` (RSS + extraction) avec une liste de sources dédiée | élevée, déjà outillé ; la liste de domaines est à construire avec VIGINUM / EUvsDisinfo |
-| TikTok | Research API (ouverte aux chercheurs européens sous DSA) | moyenne : dossier d'accès, données agrégées |
-| Facebook / Instagram | Meta Content Library | moyenne : dossier d'accès via ICPSR, lecture sans export brut |
+| TikTok | Research API, ouverte depuis septembre 2026 aux organismes sans but lucratif enregistrés dans l'UE | moyenne : environ quatre semaines d'instruction ; 1 000 requêtes et 100 000 enregistrements par jour ; vidéos, commentaires, profils |
+| Facebook / Instagram | Meta Content Library, ouverte aux organismes sans but lucratif à mission de recherche ; instruction par le CASD pour l'UE | moyenne : quatre à huit semaines ; travail dans une enclave sécurisée facturée, pas d'export brut |
 | Bluesky | Jetstream / firehose public | élevée, mais audience française faible |
-| YouTube | Data API (quota gratuit) | élevée pour les commentaires et métadonnées |
+| YouTube | Data API (quota de base gratuit ; quota étendu réservé aux établissements d'enseignement supérieur) | élevée pour les commentaires et métadonnées, recherche incomplète |
 
 ## 4. Architecture cible : veille froide, activation chaude
 
@@ -171,14 +203,15 @@ décision de l'équipe. Durée : 7 à 21 jours.
 
 - Cadence syndication 15 min sur la liste élargie.
 - **Recherche par mots-clés** (toponymes, hashtags, « bilan », « morts », « HAARP », « géo-ingénierie »,
-  « 112 », « France Alert », noms des ministres) toutes les 15 min via la voie B ou D.
+  « 112 », « France Alert », noms des ministres) toutes les 15 min via l'API à l'usage (voie C),
+  doublée par la capture navigateur des analystes (voie B).
 - **Cascades** : pour tout tweet dépassant un seuil (par ex. 200 RT) ou émis par un compte
   officiel, récupération de l'arbre de réponses et de citations, re-visité à J+1 et J+3.
 - **Snowball** : les comptes qui apparaissent plus de N fois comme amplificateurs entrent dans
   la liste suivie pour la durée de la crise ; leur profil est capturé immédiatement (les comptes
   jetables sont supprimés vite).
-- Capture navigateur Zeeschuimer par les analystes en parallèle, agrégée dans 4CAT, comme filet
-  de sécurité si la voie automatique casse.
+- Capture navigateur Zeeschuimer par les analystes en parallèle, agrégée dans 4CAT : c'est la
+  voie la plus défendable juridiquement et le filet de sécurité si la voie automatique casse.
 - Archivage Wayback (`archive.wayback`) de chaque URL externe partagée au-dessus du seuil : les
   faux sites disparaissent.
 
@@ -189,7 +222,7 @@ décision de l'équipe. Durée : 7 à 21 jours.
           │
   ┌───────┴────────────────────────────────────────────────────────┐
   │ collecteurs (mediascrapers)                                    │
-  │  x.syndication  x.backfill  x.nitter*  x.search*  x.thread*    │
+  │  x.syndication  x.backfill  x.api*  x.thread*  zeeschuimer_in* │
   │  press.feed+extract        telegram*          archive.wayback  │
   └───────┬────────────────────────────────────────────────────────┘
           │  Post / Profile / Article / Message (dataclasses, JSONL)
@@ -228,7 +261,7 @@ Arêtes datées :
 | compte → hashtag | `hashtags` | campagnes de hashtag |
 
 Avec la voie A seule, le graphe est **égocentré** sur les comptes suivis (on voit qui ils
-relaient, pas qui les relaie). La voie B ou D le rend **complet** sur une requête.
+relaient, pas qui les relaie). Les voies B, C ou D le rendent **complet** sur une requête.
 
 ### 4.4 Analyses livrables pour l'Observatoire
 
@@ -239,7 +272,9 @@ relaient, pas qui les relaie). La voie B ou D le rend **complet** sur une requê
    délai entre démenti officiel et décrue, part des comptes créés depuis moins de 30 jours.
 3. **Indicateurs de coordination** : groupes de comptes qui co-retweetent en moins de 60 s,
    partagent les mêmes URL dans l'heure, ont le même `source`, la même date de création ; score
-   par groupe, pas étiquette « bot » par compte (la littérature a abandonné Botometer).
+   par groupe, pas étiquette « bot » par compte : Botometer ferme le 2 novembre 2026 et ne
+   notait plus que des comptes d'avant juin 2023 ; les outils vivants sont le Coordination
+   Network Toolkit (QUT) et CooRTweet (R), tous deux hors ligne sur des exports CSV.
 4. **Classement FIMI des relais** : pour chaque compte au-dessus d'un seuil d'amplification,
    case A/B/C/D proposée par le modèle à partir de la bio, du site et des domaines partagés,
    validée par un analyste.
@@ -254,13 +289,17 @@ relaient, pas qui les relaie). La voie B ou D le rend **complet** sur une requê
   hachés, pas de citation nominative sous un seuil d'audience). Tenir un registre de traitement
   IRIS et une durée de conservation (proposition : 3 ans, données brutes chiffrées).
 - **Conditions d'utilisation de X** : la voie A s'appuie sur un endpoint public non documenté,
-  la voie B/C sur des comptes contre les CGU. Le risque est la suspension des comptes et, en
-  théorie, une action civile ; aucune n'a visé un institut de recherche européen à ce jour, mais
-  l'IRIS doit l'accepter explicitement. La voie D et E suppriment ce risque.
-- **DSA article 40** : la demande d'accès « chercheur agréé » doit être déposée auprès de l'ARCOM
-  (coordinateur français des services numériques) avec un protocole de recherche. L'IRIS, en
-  tant qu'organisme de recherche à but non lucratif, est éligible. Le délai est long, mais c'est
-  la seule voie durable pour une **étude pluriannuelle** sous contrat DGRIS.
+  la voie D sur un pool de comptes. Le risque est la suspension des comptes et, en théorie,
+  une action civile ; les mises en demeure d'août 2026 ont visé Nitter, pas des instituts de
+  recherche, et le plan d'action DSA de juillet 2026 lève l'interdiction de collecte pour les
+  chercheurs éligibles. L'IRIS doit néanmoins l'accepter explicitement. Les voies B, C et E
+  suppriment ce risque.
+- **DSA article 40** : deux dossiers à déposer en parallèle, le formulaire « DSA vetted
+  researchers » de X (article 40(12), données publiques, gratuit) et une demande 40(4) sur le
+  portail européen d'accès aux données, instruite par l'Arcom, avec un protocole de recherche
+  et la déclaration du financement DGRIS. L'IRIS, organisme de recherche sans but lucratif, est
+  éligible. Le délai est long et les refus existent, mais c'est la seule voie durable pour une
+  **étude pluriannuelle**.
 - **Attribution** : le dispositif mesure la diffusion et la coordination ; il n'attribue pas à
   un État. Les livrables doivent conserver la distinction de la note (attribué / non attribué)
   et renvoyer à VIGINUM pour l'attribution.
@@ -269,9 +308,9 @@ relaient, pas qui les relaie). La voie B ou D le rend **complet** sur une requê
 
 | Phase | Durée | Contenu | Prérequis |
 |---|---|---|---|
-| **0. Décisions** | 1 semaine | choix de la voie crise (B ou D), fourniture des comptes ou du budget, dépôt du dossier DSA, liste initiale de comptes / mots-clés / canaux par l'équipe Climat | réunion IRIS |
+| **0. Décisions** | 1 semaine | budget API à l'usage par crise (voie C), comptes X des analystes pour Zeeschuimer (voie B), dépôt des deux dossiers DSA, liste initiale de comptes / mots-clés / canaux par l'équipe Climat ; sonde quotidienne de l'endpoint de syndication | réunion IRIS |
 | **1. Socle froid** | 2 semaines | module `storage` (SQLite, migrations, séries de métriques), `watch --mode cold`, listes YAML, Telegram, liste de sources presse « État + relais », export GEXF, tableau de bord minimal | aucun |
-| **2. Voie crise** | 3 semaines | si B : remontée du client Nitter dans le paquet, instance privée, `x.search`, `x.thread` (réponses + citations paginées), rotation de jetons ; si D : client API v2 (`search/recent`, `conversation_id`), gestion des quotas | comptes ou clés |
+| **2. Voie crise** | 3 semaines | client API v2 à l'usage (`search/recent`, `conversation_id`, `users`), compteur de dépense et plafond ; importateur des exports Zeeschuimer / 4CAT dans le même modèle `Post` / `Profile` ; en option, adaptateur twscrape derrière la même interface | clés API, comptes analystes |
 | **3. Analyse** | 3 semaines | construction du graphe, Leiden, indicateurs de coordination, codebook FIMI × narratifs en prompt, validation inter-annotateurs sur 200 contenus, gabarits de figures pour la note | données de la phase 1 |
 | **4. Exercice à blanc** | 1 semaine | rejouer la DANA 2024 ou un épisode cévenol récent à partir des archives (Wayback + fxtwitter) pour calibrer seuils et cadences ; procédure d'activation écrite (qui déclenche, qui scrolle, qui archive) | phases 1 à 3 |
 
@@ -283,11 +322,25 @@ chaque semaine de ligne de base acquise avant la première crise a de la valeur.
 
 - **Faisable en l'état pour la veille de fond** sur une liste de comptes, avec bios et premier
   cercle, dès que le stockage et la boucle de collecte sont écrits (phase 1).
-- **Pas faisable en l'état pour une crise** : il manque la recherche et les cascades, qui
-  dépendent d'une décision d'accès aux données (comptes pour Nitter privé, ou budget API Pro
-  le temps de la crise), pas d'un développement.
+- **Pas faisable en l'état pour une crise** : il manque la recherche et les cascades. Nitter
+  n'est plus une option. La réponse est un **petit budget API à l'usage par crise** (quelques
+  centaines d'euros), la **capture navigateur des analystes** (Zeeschuimer + 4CAT), et le
+  dépôt immédiat des **dossiers DSA** pour la suite.
 - **Le bon investissement immédiat** : lancer la phase 0 (décisions, dossier DSA, listes) et la
   phase 1 (socle froid) sans attendre, et brancher Telegram et la presse d'État, qui couvrent
   l'amont des campagnes observées dans la note.
 - **Garde-fous** : pseudonymisation, registre RGPD, séparation stricte entre mesure de
   diffusion et attribution.
+
+## Annexe : sources de la section 3 (consultées le 2 octobre 2026)
+
+- Nitter : dépôt `zedeus/nitter` (archivé le 11 septembre 2026), tickets #1301 et #1442 ; The Register, 15 septembre 2026, sur les mises en demeure visant xcancel.
+- twscrape : dépôt `vladkens/twscrape` (commits d'août 2026), tickets #295, #298, #315 ; twikit : fork `unclecode/twikit`, ticket d60/twikit #298.
+- API X : docs.x.com (inaccessible depuis l'environnement de rédaction), recoupé par quatre billets de revendeurs concordants (Elfsight, Blotato, PostProxy, SocialCrawl) ; chiffres à confirmer sur la console développeur avant tout engagement.
+- DSA : Commission européenne, « Commission accepts X's action plan to comply with the Digital Services Act », juillet 2026 ; TechPolicy.Press, juillet 2026 ; Verfassungsblog sur l'amende du 5 décembre 2025 ; GFF sur Democracy Reporting International c. X (Berlin, 17 février 2026) ; help.x.com « DSA vetted researchers » ; Arcom, procédure d'agrément des chercheurs (article 40 du RSN) ; DSA Observatory, 12 mars 2026, sur un refus ; FAQ Coimisiún na Meán, décembre 2025.
+- Syndication : discussions Hacker News (2023), billets samwize (août 2025) et shkspr.mobi (avril 2025), ticket tiers de juillet 2026 constatant l'arrêt d'ingestion ; à mettre en regard du fonctionnement observé en production ED Mediawatch en août-septembre 2026.
+- fxtwitter : wiki FxEmbed « Status Fetch API ».
+- médialab : minet, ticket #1009 (14 mai 2025, ouvert) ; gazouilloire (inactif) ; 4CAT, « Available data sources » ; Zeeschuimer.
+- Plateformes : tegracli (Leibniz-HBI) ; TikTok Research API et « Vetted researcher data access » ; Bluesky Jetstream ; research.youtube ; Meta Content Library ; Bellingcat toolkit.
+- Corpus et méthodes climat : Climatoscope / ISC-PIF (Chavalarias, arXiv 2406.17135) ; CARDS augmenté (arXiv 2404.15673, Nature Communications Earth & Environment 2024) ; QuotaClimat × Data For Good × Science Feedback (octobre 2025) ; EDMO ; CAAD, ISD ; DeSmog.
+- Coordination : Botometer (arrêt le 2 novembre 2026) ; OSoMeNet ; Coordination Network Toolkit (QUT) ; CooRTweet ; CooRnet (archivé le 2 septembre 2024).
